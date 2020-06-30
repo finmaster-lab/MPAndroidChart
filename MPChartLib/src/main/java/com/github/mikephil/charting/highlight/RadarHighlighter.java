@@ -1,79 +1,82 @@
 package com.github.mikephil.charting.highlight;
 
+import java.util.List;
+
 import com.github.mikephil.charting.charts.RadarChart;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.interfaces.datasets.IDataSet;
 import com.github.mikephil.charting.utils.MPPointF;
 import com.github.mikephil.charting.utils.Utils;
 
-import java.util.List;
-
 /**
  * Created by philipp on 12/06/16.
  */
 public class RadarHighlighter extends PieRadarHighlighter<RadarChart> {
 
-    public RadarHighlighter(RadarChart chart) {
-        super(chart);
-    }
+	public RadarHighlighter(RadarChart chart) {
+		super(chart);
+	}
 
-    @Override
-    protected Highlight getClosestHighlight(int index, float x, float y) {
+	@Override
+	protected Highlight getClosestHighlight(int index, float x, float y) {
 
-        List<Highlight> highlights = getHighlightsAtIndex(index);
+		List<Highlight> highlights = getHighlightsAtIndex(index);
 
-        float distanceToCenter = mChart.distanceToCenter(x, y) / mChart.getFactor();
+		float distanceToCenter = mChart.distanceToCenter(x, y)
+				/ mChart.getFactor();
 
-        Highlight closest = null;
-        float distance = Float.MAX_VALUE;
+		Highlight closest = null;
+		float distance = Float.MAX_VALUE;
 
-        for (int i = 0; i < highlights.size(); i++) {
+		for (int i = 0; i < highlights.size(); i++) {
 
-            Highlight high = highlights.get(i);
+			Highlight high = highlights.get(i);
 
-            float cdistance = Math.abs(high.getY() - distanceToCenter);
-            if (cdistance < distance) {
-                closest = high;
-                distance = cdistance;
-            }
-        }
+			float cdistance = Math.abs(high.getY() - distanceToCenter);
+			if (cdistance < distance) {
+				closest = high;
+				distance = cdistance;
+			}
+		}
 
-        return closest;
-    }
-    /**
-     * Returns an array of Highlight objects for the given index. The Highlight
-     * objects give information about the value at the selected index and the
-     * DataSet it belongs to. INFORMATION: This method does calculations at
-     * runtime. Do not over-use in performance critical situations.
-     *
-     * @param index
-     * @return
-     */
-    protected List<Highlight> getHighlightsAtIndex(int index) {
+		return closest;
+	}
 
-        mHighlightBuffer.clear();
+	/**
+	 * Returns an array of Highlight objects for the given index. The Highlight
+	 * objects give information about the value at the selected index and the
+	 * DataSet it belongs to. INFORMATION: This method does calculations at
+	 * runtime. Do not over-use in performance critical situations.
+	 *
+	 * @param index
+	 * @return
+	 */
+	protected List<Highlight> getHighlightsAtIndex(int index) {
 
-        float phaseX = mChart.getAnimator().getPhaseX();
-        float phaseY = mChart.getAnimator().getPhaseY();
-        float sliceangle = mChart.getSliceAngle();
-        float factor = mChart.getFactor();
+		mHighlightBuffer.clear();
 
-        MPPointF pOut = MPPointF.getInstance(0,0);
-        for (int i = 0; i < mChart.getData().getDataSetCount(); i++) {
+		float phaseX = mChart.getAnimator().getPhaseX();
+		float phaseY = mChart.getAnimator().getPhaseY();
+		float sliceangle = mChart.getSliceAngle();
+		float factor = mChart.getFactor();
 
-            IDataSet<?> dataSet = mChart.getData().getDataSetByIndex(i);
+		MPPointF pOut = MPPointF.getInstance(0, 0);
+		for (int i = 0; i < mChart.getData().getDataSetCount(); i++) {
 
-            final Entry entry = dataSet.getEntryForIndex(index);
+			IDataSet<?> dataSet = mChart.getData().getDataSetByIndex(i);
 
-            float y = (entry.getY() - mChart.getYChartMin());
+			final Entry entry = dataSet.getEntryForIndex(index);
 
-            Utils.getPosition(
-                    mChart.getCenterOffsets(), y * factor * phaseY,
-                    sliceangle * index * phaseX + mChart.getRotationAngle(), pOut);
+			float y = (entry.getY() - mChart.getYChartMin());
 
-            mHighlightBuffer.add(new Highlight(index, entry.getY(), pOut.x, pOut.y, i, dataSet.getAxisDependency()));
-        }
+			Utils.getPosition(mChart.getCenterOffsets(), y * factor * phaseY,
+					sliceangle * index * phaseX + mChart.getRotationAngle(),
+					pOut);
 
-        return mHighlightBuffer;
-    }
+			mHighlightBuffer.add(new Highlight(index, entry.getY(), pOut.x,
+					pOut.y, i, dataSet.getAxisDependency()));
+		}
+
+		return mHighlightBuffer;
+	}
 }

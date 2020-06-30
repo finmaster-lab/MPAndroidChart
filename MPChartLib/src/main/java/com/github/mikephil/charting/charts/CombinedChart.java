@@ -1,11 +1,6 @@
 
 package com.github.mikephil.charting.charts;
 
-import android.content.Context;
-import android.graphics.Canvas;
-import android.util.AttributeSet;
-import android.util.Log;
-
 import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BubbleData;
 import com.github.mikephil.charting.data.CandleData;
@@ -19,254 +14,256 @@ import com.github.mikephil.charting.interfaces.dataprovider.CombinedDataProvider
 import com.github.mikephil.charting.interfaces.datasets.IDataSet;
 import com.github.mikephil.charting.renderer.CombinedChartRenderer;
 
+import android.content.Context;
+import android.graphics.Canvas;
+import android.util.AttributeSet;
+import android.util.Log;
+
 /**
  * This chart class allows the combination of lines, bars, scatter and candle
  * data all displayed in one chart area.
  *
  * @author Philipp Jahoda
  */
-public class CombinedChart extends BarLineChartBase<CombinedData> implements CombinedDataProvider {
+public class CombinedChart extends BarLineChartBase<CombinedData>
+		implements CombinedDataProvider {
 
-    /**
-     * if set to true, all values are drawn above their bars, instead of below
-     * their top
-     */
-    private boolean mDrawValueAboveBar = true;
+	/**
+	 * flag that indicates whether the highlight should be full-bar oriented, or
+	 * single-value?
+	 */
+	protected boolean mHighlightFullBarEnabled = false;
+	protected DrawOrder[] mDrawOrder;
+	/**
+	 * if set to true, all values are drawn above their bars, instead of below
+	 * their top
+	 */
+	private boolean mDrawValueAboveBar = true;
+	/**
+	 * if set to true, a grey area is drawn behind each bar that indicates the
+	 * maximum value
+	 */
+	private boolean mDrawBarShadow = false;
 
+	public CombinedChart(Context context) {
+		super(context);
+	}
 
-    /**
-     * flag that indicates whether the highlight should be full-bar oriented, or single-value?
-     */
-    protected boolean mHighlightFullBarEnabled = false;
+	public CombinedChart(Context context, AttributeSet attrs) {
+		super(context, attrs);
+	}
 
-    /**
-     * if set to true, a grey area is drawn behind each bar that indicates the
-     * maximum value
-     */
-    private boolean mDrawBarShadow = false;
+	public CombinedChart(Context context, AttributeSet attrs, int defStyle) {
+		super(context, attrs, defStyle);
+	}
 
-    protected DrawOrder[] mDrawOrder;
+	@Override
+	protected void init() {
+		super.init();
 
-    /**
-     * enum that allows to specify the order in which the different data objects
-     * for the combined-chart are drawn
-     */
-    public enum DrawOrder {
-        BAR, BUBBLE, LINE, CANDLE, SCATTER
-    }
+		// Default values are not ready here yet
+		mDrawOrder = new DrawOrder[] { DrawOrder.BAR, DrawOrder.BUBBLE,
+				DrawOrder.LINE, DrawOrder.CANDLE, DrawOrder.SCATTER };
 
-    public CombinedChart(Context context) {
-        super(context);
-    }
+		setHighlighter(new CombinedHighlighter(this, this));
 
-    public CombinedChart(Context context, AttributeSet attrs) {
-        super(context, attrs);
-    }
+		// Old default behaviour
+		setHighlightFullBarEnabled(true);
 
-    public CombinedChart(Context context, AttributeSet attrs, int defStyle) {
-        super(context, attrs, defStyle);
-    }
+		mRenderer = new CombinedChartRenderer(this, mAnimator,
+				mViewPortHandler);
+	}
 
-    @Override
-    protected void init() {
-        super.init();
+	@Override
+	public CombinedData getCombinedData() {
+		return mData;
+	}
 
-        // Default values are not ready here yet
-        mDrawOrder = new DrawOrder[]{
-                DrawOrder.BAR, DrawOrder.BUBBLE, DrawOrder.LINE, DrawOrder.CANDLE, DrawOrder.SCATTER
-        };
+	@Override
+	public void setData(CombinedData data) {
+		super.setData(data);
+		setHighlighter(new CombinedHighlighter(this, this));
+		((CombinedChartRenderer) mRenderer).createRenderers();
+		mRenderer.initBuffers();
+	}
 
-        setHighlighter(new CombinedHighlighter(this, this));
+	/**
+	 * Returns the Highlight object (contains x-index and DataSet index) of the
+	 * selected value at the given touch point inside the CombinedChart.
+	 *
+	 * @param x
+	 * @param y
+	 * @return
+	 */
+	@Override
+	public Highlight getHighlightByTouchPoint(float x, float y) {
 
-        // Old default behaviour
-        setHighlightFullBarEnabled(true);
+		if (mData == null) {
+			Log.e(LOG_TAG, "Can't select by touch. No data set.");
+			return null;
+		} else {
+			Highlight h = getHighlighter().getHighlight(x, y);
+			if (h == null || !isHighlightFullBarEnabled())
+				return h;
 
-        mRenderer = new CombinedChartRenderer(this, mAnimator, mViewPortHandler);
-    }
+			// For isHighlightFullBarEnabled, remove stackIndex
+			return new Highlight(h.getX(), h.getY(), h.getXPx(), h.getYPx(),
+					h.getDataSetIndex(), -1, h.getAxis());
+		}
+	}
 
-    @Override
-    public CombinedData getCombinedData() {
-        return mData;
-    }
+	@Override
+	public LineData getLineData() {
+		if (mData == null)
+			return null;
+		return mData.getLineData();
+	}
 
-    @Override
-    public void setData(CombinedData data) {
-        super.setData(data);
-        setHighlighter(new CombinedHighlighter(this, this));
-        ((CombinedChartRenderer)mRenderer).createRenderers();
-        mRenderer.initBuffers();
-    }
+	@Override
+	public BarData getBarData() {
+		if (mData == null)
+			return null;
+		return mData.getBarData();
+	}
 
-    /**
-     * Returns the Highlight object (contains x-index and DataSet index) of the selected value at the given touch
-     * point
-     * inside the CombinedChart.
-     *
-     * @param x
-     * @param y
-     * @return
-     */
-    @Override
-    public Highlight getHighlightByTouchPoint(float x, float y) {
+	@Override
+	public ScatterData getScatterData() {
+		if (mData == null)
+			return null;
+		return mData.getScatterData();
+	}
 
-        if (mData == null) {
-            Log.e(LOG_TAG, "Can't select by touch. No data set.");
-            return null;
-        } else {
-            Highlight h = getHighlighter().getHighlight(x, y);
-            if (h == null || !isHighlightFullBarEnabled()) return h;
+	@Override
+	public CandleData getCandleData() {
+		if (mData == null)
+			return null;
+		return mData.getCandleData();
+	}
 
-            // For isHighlightFullBarEnabled, remove stackIndex
-            return new Highlight(h.getX(), h.getY(),
-                    h.getXPx(), h.getYPx(),
-                    h.getDataSetIndex(), -1, h.getAxis());
-        }
-    }
+	@Override
+	public BubbleData getBubbleData() {
+		if (mData == null)
+			return null;
+		return mData.getBubbleData();
+	}
 
-    @Override
-    public LineData getLineData() {
-        if (mData == null)
-            return null;
-        return mData.getLineData();
-    }
+	@Override
+	public boolean isDrawBarShadowEnabled() {
+		return mDrawBarShadow;
+	}
 
-    @Override
-    public BarData getBarData() {
-        if (mData == null)
-            return null;
-        return mData.getBarData();
-    }
+	@Override
+	public boolean isDrawValueAboveBarEnabled() {
+		return mDrawValueAboveBar;
+	}
 
-    @Override
-    public ScatterData getScatterData() {
-        if (mData == null)
-            return null;
-        return mData.getScatterData();
-    }
+	/**
+	 * If set to true, all values are drawn above their bars, instead of below
+	 * their top.
+	 *
+	 * @param enabled
+	 */
+	public void setDrawValueAboveBar(boolean enabled) {
+		mDrawValueAboveBar = enabled;
+	}
 
-    @Override
-    public CandleData getCandleData() {
-        if (mData == null)
-            return null;
-        return mData.getCandleData();
-    }
+	/**
+	 * If set to true, a grey area is drawn behind each bar that indicates the
+	 * maximum value. Enabling his will reduce performance by about 50%.
+	 *
+	 * @param enabled
+	 */
+	public void setDrawBarShadow(boolean enabled) {
+		mDrawBarShadow = enabled;
+	}
 
-    @Override
-    public BubbleData getBubbleData() {
-        if (mData == null)
-            return null;
-        return mData.getBubbleData();
-    }
+	/**
+	 * @return true the highlight operation is be full-bar oriented, false if
+	 *         single-value
+	 */
+	@Override
+	public boolean isHighlightFullBarEnabled() {
+		return mHighlightFullBarEnabled;
+	}
 
-    @Override
-    public boolean isDrawBarShadowEnabled() {
-        return mDrawBarShadow;
-    }
+	/**
+	 * Set this to true to make the highlight operation full-bar oriented, false
+	 * to make it highlight single values (relevant only for stacked).
+	 *
+	 * @param enabled
+	 */
+	public void setHighlightFullBarEnabled(boolean enabled) {
+		mHighlightFullBarEnabled = enabled;
+	}
 
-    @Override
-    public boolean isDrawValueAboveBarEnabled() {
-        return mDrawValueAboveBar;
-    }
+	/**
+	 * Returns the currently set draw order.
+	 *
+	 * @return
+	 */
+	public DrawOrder[] getDrawOrder() {
+		return mDrawOrder;
+	}
 
-    /**
-     * If set to true, all values are drawn above their bars, instead of below
-     * their top.
-     *
-     * @param enabled
-     */
-    public void setDrawValueAboveBar(boolean enabled) {
-        mDrawValueAboveBar = enabled;
-    }
+	/**
+	 * Sets the order in which the provided data objects should be drawn. The
+	 * earlier you place them in the provided array, the further they will be in
+	 * the background. e.g. if you provide new DrawOrer[] { DrawOrder.BAR,
+	 * DrawOrder.LINE }, the bars will be drawn behind the lines.
+	 *
+	 * @param order
+	 */
+	public void setDrawOrder(DrawOrder[] order) {
+		if (order == null || order.length <= 0)
+			return;
+		mDrawOrder = order;
+	}
 
+	/**
+	 * draws all MarkerViews on the highlighted positions
+	 */
+	protected void drawMarkers(Canvas canvas) {
 
-    /**
-     * If set to true, a grey area is drawn behind each bar that indicates the
-     * maximum value. Enabling his will reduce performance by about 50%.
-     *
-     * @param enabled
-     */
-    public void setDrawBarShadow(boolean enabled) {
-        mDrawBarShadow = enabled;
-    }
+		// if there is no marker view or drawing marker is disabled
+		if (mMarker == null || !isDrawMarkersEnabled() || !valuesToHighlight())
+			return;
 
-    /**
-     * Set this to true to make the highlight operation full-bar oriented,
-     * false to make it highlight single values (relevant only for stacked).
-     *
-     * @param enabled
-     */
-    public void setHighlightFullBarEnabled(boolean enabled) {
-        mHighlightFullBarEnabled = enabled;
-    }
+		for (int i = 0; i < mIndicesToHighlight.length; i++) {
 
-    /**
-     * @return true the highlight operation is be full-bar oriented, false if single-value
-     */
-    @Override
-    public boolean isHighlightFullBarEnabled() {
-        return mHighlightFullBarEnabled;
-    }
+			Highlight highlight = mIndicesToHighlight[i];
 
-    /**
-     * Returns the currently set draw order.
-     *
-     * @return
-     */
-    public DrawOrder[] getDrawOrder() {
-        return mDrawOrder;
-    }
+			IDataSet set = mData.getDataSetByHighlight(highlight);
 
-    /**
-     * Sets the order in which the provided data objects should be drawn. The
-     * earlier you place them in the provided array, the further they will be in
-     * the background. e.g. if you provide new DrawOrer[] { DrawOrder.BAR,
-     * DrawOrder.LINE }, the bars will be drawn behind the lines.
-     *
-     * @param order
-     */
-    public void setDrawOrder(DrawOrder[] order) {
-        if (order == null || order.length <= 0)
-            return;
-        mDrawOrder = order;
-    }
+			Entry e = mData.getEntryForHighlight(highlight);
+			if (e == null)
+				continue;
 
-    /**
-     * draws all MarkerViews on the highlighted positions
-     */
-    protected void drawMarkers(Canvas canvas) {
+			int entryIndex = set.getEntryIndex(e);
 
-        // if there is no marker view or drawing marker is disabled
-        if (mMarker == null || !isDrawMarkersEnabled() || !valuesToHighlight())
-            return;
+			// make sure entry not null
+			if (entryIndex > set.getEntryCount() * mAnimator.getPhaseX())
+				continue;
 
-        for (int i = 0; i < mIndicesToHighlight.length; i++) {
+			float[] pos = getMarkerPosition(highlight);
 
-            Highlight highlight = mIndicesToHighlight[i];
+			// check bounds
+			if (!mViewPortHandler.isInBounds(pos[0], pos[1]))
+				continue;
 
-            IDataSet set = mData.getDataSetByHighlight(highlight);
+			// callbacks to update the content
+			mMarker.refreshContent(e, highlight);
 
-            Entry e = mData.getEntryForHighlight(highlight);
-            if (e == null)
-                continue;
+			// draw the marker
+			mMarker.draw(canvas, pos[0], pos[1]);
+		}
+	}
 
-            int entryIndex = set.getEntryIndex(e);
-
-            // make sure entry not null
-            if (entryIndex > set.getEntryCount() * mAnimator.getPhaseX())
-                continue;
-
-            float[] pos = getMarkerPosition(highlight);
-
-            // check bounds
-            if (!mViewPortHandler.isInBounds(pos[0], pos[1]))
-                continue;
-
-            // callbacks to update the content
-            mMarker.refreshContent(e, highlight);
-
-            // draw the marker
-            mMarker.draw(canvas, pos[0], pos[1]);
-        }
-    }
+	/**
+	 * enum that allows to specify the order in which the different data objects
+	 * for the combined-chart are drawn
+	 */
+	public enum DrawOrder {
+		BAR, BUBBLE, LINE, CANDLE, SCATTER
+	}
 
 }
