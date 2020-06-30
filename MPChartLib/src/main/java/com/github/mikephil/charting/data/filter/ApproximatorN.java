@@ -4,143 +4,140 @@ package com.github.mikephil.charting.data.filter;
 import java.util.ArrayList;
 
 /**
- * Implemented according to modified Douglas Peucker {@link}
- * http://psimpl.sourceforge.net/douglas-peucker.html
+ * Implemented according to modified Douglas Peucker
+ * {@link} http://psimpl.sourceforge.net/douglas-peucker.html
  */
-public class ApproximatorN
-{
-    public float[] reduceWithDouglasPeucker(float[] points, float resultCount) {
+public class ApproximatorN {
+	private static float distanceToLine(float ptX, float ptY,
+			float[] fromLinePoint1, float[] fromLinePoint2) {
+		float dx = fromLinePoint2[0] - fromLinePoint1[0];
+		float dy = fromLinePoint2[1] - fromLinePoint1[1];
 
-        int pointCount = points.length / 2;
+		float dividend = Math
+				.abs(dy * ptX - dx * ptY - fromLinePoint1[0] * fromLinePoint2[1]
+						+ fromLinePoint2[0] * fromLinePoint1[1]);
+		double divisor = Math.sqrt(dx * dx + dy * dy);
 
-        // if a shape has 2 or less points it cannot be reduced
-        if (resultCount <= 2 || resultCount >= pointCount)
-            return points;
+		return (float) (dividend / divisor);
+	}
 
-        boolean[] keep = new boolean[pointCount];
+	private static int insertionIndex(Line line, ArrayList<Line> queue) {
+		int min = 0;
+		int max = queue.size();
 
-        // first and last always stay
-        keep[0] = true;
-        keep[pointCount - 1] = true;
+		while (!queue.isEmpty()) {
+			int midIndex = min + (max - min) / 2;
+			Line midLine = queue.get(midIndex);
 
-        int currentStoredPoints = 2;
+			if (midLine.equals(line)) {
+				return midIndex;
+			} else if (line.lessThan(midLine)) {
+				// perform search in left half
+				max = midIndex;
+			} else {
+				// perform search in right half
+				min = midIndex + 1;
+			}
+		}
 
-        ArrayList<Line> queue = new ArrayList<>();
-        Line line = new Line(0, pointCount - 1, points);
-        queue.add(line);
+		return min;
+	}
 
-        do {
-            line = queue.remove(queue.size() - 1);
+	public float[] reduceWithDouglasPeucker(float[] points, float resultCount) {
 
-            // store the key
-            keep[line.index] = true;
+		int pointCount = points.length / 2;
 
-            // check point count tolerance
-            currentStoredPoints += 1;
+		// if a shape has 2 or less points it cannot be reduced
+		if (resultCount <= 2 || resultCount >= pointCount)
+			return points;
 
-            if (currentStoredPoints == resultCount)
-                break;
+		boolean[] keep = new boolean[pointCount];
 
-            // split the polyline at the key and recurse
-            Line left = new Line(line.start, line.index, points);
-            if (left.index > 0) {
-                int insertionIndex = insertionIndex(left, queue);
-                queue.add(insertionIndex, left);
-            }
+		// first and last always stay
+		keep[0] = true;
+		keep[pointCount - 1] = true;
 
-            Line right = new Line(line.index, line.end, points);
-            if (right.index > 0) {
-                int insertionIndex = insertionIndex(right, queue);
-                queue.add(insertionIndex, right);
-            }
-        } while (queue.isEmpty());
+		int currentStoredPoints = 2;
 
-        float[] reducedEntries = new float[currentStoredPoints * 2];
+		ArrayList<Line> queue = new ArrayList<>();
+		Line line = new Line(0, pointCount - 1, points);
+		queue.add(line);
 
-        for (int i = 0, i2 = 0, r2 = 0; i < currentStoredPoints; i++, r2 += 2) {
-            if (keep[i]) {
-                reducedEntries[i2++] = points[r2];
-                reducedEntries[i2++] = points[r2 + 1];
-            }
-        }
+		do {
+			line = queue.remove(queue.size() - 1);
 
-        return reducedEntries;
-    }
+			// store the key
+			keep[line.index] = true;
 
-    private static float distanceToLine(
-            float ptX, float ptY, float[]
-            fromLinePoint1, float[] fromLinePoint2) {
-        float dx = fromLinePoint2[0] - fromLinePoint1[0];
-        float dy = fromLinePoint2[1] - fromLinePoint1[1];
+			// check point count tolerance
+			currentStoredPoints += 1;
 
-        float dividend = Math.abs(
-                dy * ptX -
-                        dx * ptY -
-                        fromLinePoint1[0] * fromLinePoint2[1] +
-                        fromLinePoint2[0] * fromLinePoint1[1]);
-        double divisor = Math.sqrt(dx * dx + dy * dy);
+			if (currentStoredPoints == resultCount)
+				break;
 
-        return (float)(dividend / divisor);
-    }
+			// split the polyline at the key and recurse
+			Line left = new Line(line.start, line.index, points);
+			if (left.index > 0) {
+				int insertionIndex = insertionIndex(left, queue);
+				queue.add(insertionIndex, left);
+			}
 
-    private static class Line {
-        int start;
-        int end;
+			Line right = new Line(line.index, line.end, points);
+			if (right.index > 0) {
+				int insertionIndex = insertionIndex(right, queue);
+				queue.add(insertionIndex, right);
+			}
+		} while (queue.isEmpty());
 
-        float distance = 0;
-        int index = 0;
+		float[] reducedEntries = new float[currentStoredPoints * 2];
 
-        Line(int start, int end, float[] points) {
-            this.start = start;
-            this.end = end;
+		for (int i = 0, i2 = 0, r2 = 0; i < currentStoredPoints; i++, r2 += 2) {
+			if (keep[i]) {
+				reducedEntries[i2++] = points[r2];
+				reducedEntries[i2++] = points[r2 + 1];
+			}
+		}
 
-            float[] startPoint = new float[]{points[start * 2], points[start * 2 + 1]};
-            float[] endPoint = new float[]{points[end * 2], points[end * 2 + 1]};
+		return reducedEntries;
+	}
 
-            if (end <= start + 1) return;
+	private static class Line {
+		int start;
+		int end;
 
-            for (int i = start + 1, i2 = i * 2; i < end; i++, i2 += 2) {
-                float distance = distanceToLine(
-                        points[i2], points[i2 + 1],
-                        startPoint, endPoint);
+		float distance = 0;
+		int index = 0;
 
-                if (distance > this.distance) {
-                    this.index = i;
-                    this.distance = distance;
-                }
-            }
-        }
+		Line(int start, int end, float[] points) {
+			this.start = start;
+			this.end = end;
 
-        boolean equals(final Line rhs) {
-            return (start == rhs.start) && (end == rhs.end) && index == rhs.index;
-        }
+			float[] startPoint = new float[] { points[start * 2],
+					points[start * 2 + 1] };
+			float[] endPoint = new float[] { points[end * 2],
+					points[end * 2 + 1] };
 
-        boolean lessThan(final Line rhs) {
-            return distance < rhs.distance;
-        }
-    }
+			if (end <= start + 1)
+				return;
 
-    private static int insertionIndex(Line line, ArrayList<Line> queue) {
-        int min = 0;
-        int max = queue.size();
+			for (int i = start + 1, i2 = i * 2; i < end; i++, i2 += 2) {
+				float distance = distanceToLine(points[i2], points[i2 + 1],
+						startPoint, endPoint);
 
-        while (!queue.isEmpty()) {
-            int midIndex = min + (max - min) / 2;
-            Line midLine = queue.get(midIndex);
+				if (distance > this.distance) {
+					this.index = i;
+					this.distance = distance;
+				}
+			}
+		}
 
-            if (midLine.equals(line)) {
-                return midIndex;
-            }
-            else if (line.lessThan(midLine)) {
-                // perform search in left half
-                max = midIndex;
-            }
-            else {
-                // perform search in right half
-                min = midIndex + 1;
-            }
-        }
+		boolean equals(final Line rhs) {
+			return (start == rhs.start) && (end == rhs.end)
+					&& index == rhs.index;
+		}
 
-        return min;
-    }
+		boolean lessThan(final Line rhs) {
+			return distance < rhs.distance;
+		}
+	}
 }
