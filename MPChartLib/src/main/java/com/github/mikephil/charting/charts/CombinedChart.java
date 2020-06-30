@@ -27,7 +27,8 @@ import android.util.Log;
  */
 public class CombinedChart extends BarLineChartBase<CombinedData>
 		implements CombinedDataProvider {
-
+	// 是否强制拖拽高亮线模式
+	private boolean forceDragHighlightMode = false;
 	/**
 	 * flag that indicates whether the highlight should be full-bar oriented, or
 	 * single-value?
@@ -266,4 +267,27 @@ public class CombinedChart extends BarLineChartBase<CombinedData>
 		BAR, BUBBLE, LINE, CANDLE, SCATTER
 	}
 
+	public boolean isForceDragHighlightMode() {
+		return forceDragHighlightMode;
+	}
+
+	public void setForceDragHighlightMode(boolean forceDragHighlightMode) {
+		this.forceDragHighlightMode = forceDragHighlightMode;
+	}
+
+	@Override
+	public boolean isFullyZoomedOut() {
+		if (forceDragHighlightMode) {
+			return true;
+		}
+		return super.isFullyZoomedOut();
+	}
+
+	@Override
+	public boolean hasNoDragOffset() {
+		if (forceDragHighlightMode) {
+			return true;
+		}
+		return super.hasNoDragOffset();
+	}
 }

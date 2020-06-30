@@ -15,7 +15,8 @@ import android.util.AttributeSet;
  */
 public class LineChart extends BarLineChartBase<LineData>
 		implements LineDataProvider {
-
+	// 是否强制拖拽高亮线模式
+	private boolean forceDragHighlightMode = false;
 	public LineChart(Context context) {
 		super(context);
 	}
@@ -47,5 +48,29 @@ public class LineChart extends BarLineChartBase<LineData>
 			((LineChartRenderer) mRenderer).releaseBitmap();
 		}
 		super.onDetachedFromWindow();
+	}
+
+	public boolean isForceDragHighlightMode() {
+		return forceDragHighlightMode;
+	}
+
+	public void setForceDragHighlightMode(boolean forceDragHighlightMode) {
+		this.forceDragHighlightMode = forceDragHighlightMode;
+	}
+
+	@Override
+	public boolean isFullyZoomedOut() {
+		if (forceDragHighlightMode) {
+			return true;
+		}
+		return super.isFullyZoomedOut();
+	}
+
+	@Override
+	public boolean hasNoDragOffset() {
+		if (forceDragHighlightMode) {
+			return true;
+		}
+		return super.hasNoDragOffset();
 	}
 }

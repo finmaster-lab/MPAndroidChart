@@ -1269,6 +1269,16 @@ public abstract class Chart<T extends ChartData<? extends IDataSet<? extends Ent
 	}
 
 	/**
+	 * Sets the size of the no data text.
+	 *
+	 * @param size
+	 *            dp
+	 */
+	public void setNoDataTextSize(float size) {
+		mInfoPaint.setTextSize(Utils.convertDpToPixel(size));
+	}
+
+	/**
 	 * Set this to false to disable all gestures and touches on the chart,
 	 * default: true
 	 *

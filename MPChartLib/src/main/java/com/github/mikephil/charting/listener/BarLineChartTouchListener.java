@@ -167,9 +167,10 @@ public class BarLineChartTouchListener extends
 			}
 		}
 
-		if (mTouchMode == NONE) {
-			mGestureDetector.onTouchEvent(event);
-		}
+		// TODO 为了解决长按与fling冲突的BUG
+		// if (mTouchMode == NONE) {
+		mGestureDetector.onTouchEvent(event);
+		// }
 
 		if (!mChart.isDragEnabled()
 				&& (!mChart.isScaleXEnabled() && !mChart.isScaleYEnabled()))

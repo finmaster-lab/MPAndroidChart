@@ -557,12 +557,24 @@ public class LineChartRenderer extends LineRadarRenderer {
 
 			currentEntry = dataSet.getEntryForIndex(x);
 
-			if (isDrawSteppedEnabled) {
-				filled.lineTo(currentEntry.getX(),
-						previousEntry.getY() * phaseY);
-			}
+			if (!Float.isNaN(currentEntry.getY())) {
 
-			filled.lineTo(currentEntry.getX(), currentEntry.getY() * phaseY);
+				if (isDrawSteppedEnabled && previousEntry != null) {
+					filled.moveTo(currentEntry.getX(), previousEntry.getY()
+							* phaseY);
+				}
+
+				if (previousEntry != null && Float.isNaN(previousEntry.getY())) {
+					filled.moveTo(currentEntry.getX(), 0);
+				}
+
+				filled.lineTo(currentEntry.getX(), currentEntry.getY() * phaseY);
+			} else {
+				if (previousEntry != null && !Float.isNaN(previousEntry.getY())) {
+					filled.lineTo(previousEntry.getX(), 0);
+				}
+				filled.lineTo(currentEntry.getX(), 0);
+			}
 
 			previousEntry = currentEntry;
 		}
@@ -634,7 +646,7 @@ public class LineChartRenderer extends LineRadarRenderer {
 								dataSet.getValueTextColor(j / 2));
 					}
 
-					if (entry.getIcon() != null
+					if (entry != null &&entry.getIcon() != null
 							&& dataSet.isDrawIconsEnabled()) {
 
 						Drawable icon = entry.getIcon();
