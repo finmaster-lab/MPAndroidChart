@@ -13,14 +13,11 @@ import com.github.mikephil.charting.utils.ViewPortHandler;
 
 import android.annotation.SuppressLint;
 import android.graphics.Matrix;
-import android.graphics.PointF;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.View;
 import android.view.animation.AnimationUtils;
-
-import java.text.MessageFormat;
 
 /**
  * TouchListener for Bar-, Line-, Scatter- and CandleStickChart with handles all
@@ -65,6 +62,7 @@ public class BarLineChartTouchListener extends
 	private long mDecelerationLastTime = 0;
 	private MPPointF mDecelerationCurrentPoint = MPPointF.getInstance(0, 0);
 	private MPPointF mDecelerationVelocity = MPPointF.getInstance(0, 0);
+
 	/**
 	 * the distance of movement that will be counted as a drag
 	 */
@@ -156,6 +154,7 @@ public class BarLineChartTouchListener extends
 	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public boolean onTouch(View v, MotionEvent event) {
+
 		if (mVelocityTracker == null) {
 			mVelocityTracker = VelocityTracker.obtain();
 		}
@@ -168,10 +167,9 @@ public class BarLineChartTouchListener extends
 			}
 		}
 
-		// TODO 为了解决长按与fling冲突的BUG
-		// if (mTouchMode == NONE) {
-		mGestureDetector.onTouchEvent(event);
-		// }
+		if (mTouchMode == NONE) {
+			mGestureDetector.onTouchEvent(event);
+		}
 
 		if (!mChart.isDragEnabled()
 				&& (!mChart.isScaleXEnabled() && !mChart.isScaleYEnabled()))

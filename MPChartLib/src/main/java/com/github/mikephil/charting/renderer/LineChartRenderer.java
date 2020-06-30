@@ -634,7 +634,7 @@ public class LineChartRenderer extends LineRadarRenderer {
 								dataSet.getValueTextColor(j / 2));
 					}
 
-					if (entry != null &&entry.getIcon() != null
+					if (entry.getIcon() != null
 							&& dataSet.isDrawIconsEnabled()) {
 
 						Drawable icon = entry.getIcon();
