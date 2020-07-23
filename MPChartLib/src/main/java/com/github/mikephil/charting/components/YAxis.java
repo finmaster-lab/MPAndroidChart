@@ -195,6 +195,10 @@ public class YAxis extends AxisBase {
 		mDrawTopYLabelEntry = enabled;
 	}
 
+	public void setDrawBottomYLabelEntry(boolean mDrawBottomYLabelEntry) {
+		this.mDrawBottomYLabelEntry = mDrawBottomYLabelEntry;
+	}
+
 	/**
 	 * If this returns true, the y-axis is inverted.
 	 *
