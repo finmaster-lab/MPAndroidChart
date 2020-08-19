@@ -219,13 +219,13 @@ public class CombinedData extends
 	 */
 	public IBarLineScatterCandleBubbleDataSet<? extends Entry> getDataSetByHighlight(
 			Highlight highlight) {
-		if (highlight.getDataIndex() >= getAllData().size())
+		if (highlight.getDataSetIndex()<0||highlight.getDataIndex() >= getAllData().size())
 			return null;
 
 		BarLineScatterCandleBubbleData data = getDataByIndex(
 				highlight.getDataIndex());
 
-		if (highlight.getDataSetIndex() >= data.getDataSetCount())
+		if (highlight.getDataSetIndex()<0||highlight.getDataSetIndex() >= data.getDataSetCount())
 			return null;
 
 		return (IBarLineScatterCandleBubbleDataSet<? extends Entry>) data
